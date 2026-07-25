@@ -22,17 +22,26 @@ def get_version(year: int) -> str:
 
 
 def get_tile(lat: float, lon: float) -> str:
+    """
+    Devuelve el nombre del tile utilizado por
+    Global Forest Change (Hansen).
+    """
 
-    lat_tile = math.floor(lat / 10) * 10
-    lon_tile = math.floor(lon / 10) * 10
+    if lat >= 0:
+        lat_tile = (math.floor(lat / 10) + 1) * 10
+        ns = "N"
+    else:
+        lat_tile = math.ceil(lat / 10) * 10
+        ns = "S"
 
-    ns = "N" if lat_tile >= 0 else "S"
-    ew = "E" if lon_tile >= 0 else "W"
+    if lon >= 0:
+        lon_tile = math.floor(lon / 10) * 10
+        ew = "E"
+    else:
+        lon_tile = abs(math.floor(lon / 10) * 10)
+        ew = "W"
 
-    return (
-        f"{abs(lat_tile):02d}{ns}_"
-        f"{abs(lon_tile):03d}{ew}"
-    )
+    return f"{lat_tile:02d}{ns}_{lon_tile:03d}{ew}"
 
 
 def build_url(

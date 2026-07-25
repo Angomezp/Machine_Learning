@@ -1,3 +1,5 @@
+import rasterio
+
 from config import *
 from utils import *
 
@@ -8,7 +10,7 @@ print(f"Tile: {tile}")
 print("=" * 60)
 
 # ----------------------------------------------------------
-# Descarga productos estáticos
+# Descarga productos estáticos y ultimo año de loss
 # ----------------------------------------------------------
 
 for product in STATIC_PRODUCTS:
@@ -27,11 +29,13 @@ for product in STATIC_PRODUCTS:
         tile=tile,
         year=year,
     )
-
+    print(f"URL: {url}")
     download_file(url, filename)
+    with rasterio.open(filename) as src:
+        print(src.bounds)
 
 # ----------------------------------------------------------
-# Descarga productos temporales
+# Descarga productos temporales sin ultimo año de loss
 # ----------------------------------------------------------
 
 for year in GFC_YEARS:
@@ -53,7 +57,9 @@ for year in GFC_YEARS:
             tile=tile,
             year=year,
         )
-
+        print(f"URL: {url}")
         download_file(url, filename)
+        with rasterio.open(filename) as src:
+            print(src.bounds)
 
 print("\nDescarga finalizada.")

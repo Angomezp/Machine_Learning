@@ -18,25 +18,28 @@ OUTPUT_DIR = DATA_DIR
 # Área de estudio
 # ============================================================
 
-CENTER_LAT = 1.62
-CENTER_LON = -74.35
+CENTER_LAT = 3.30  # grados
+CENTER_LON = -71.55 # grados
 
 WIDTH_KM = 10
 HEIGHT_KM = 10
+
+# Margen adicional alrededor del área
+PADDING_METERS = 500
 
 # ============================================================
 # Global Forest Change
 # ============================================================
 
-
-
 GFC_YEARS = [
+    2022,
     2023,
     2024,
     2025,
 ]
 
 GFC_VERSIONS = {
+    2022: "v1.10",
     2023: "v1.11",
     2024: "v1.12",
     2025: "v1.13",
@@ -46,11 +49,12 @@ STATIC_PRODUCTS = [
     "treecover2000",
     "gain",
     "datamask",
+    "lossyear", # Si cambia con el tiempo, pero solo necesitamos el último año de pérdida. (Con ese construimos todos los recent_loss)
 ]
 
 TEMPORAL_PRODUCTS = [
-    "lossyear",
     "last",
+    
 ]
 
 PRODUCT_NAMES = {
