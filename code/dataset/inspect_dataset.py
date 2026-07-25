@@ -1,9 +1,8 @@
 import h5py
 import numpy as np
-from config import DATASET_DIR, GFC_YEARS
+from config import DATASET_PATH, GFC_YEARS
 
 TARGET_YEAR = GFC_YEARS[-1]
-DATASET_PATH = DATASET_DIR / f"gfc_dataset_{TARGET_YEAR}.h5"
 
 
 def inspect_dataset(dataset_path: str):

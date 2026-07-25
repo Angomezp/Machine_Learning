@@ -9,7 +9,7 @@ from config import (
     CROPPED_DIR,
     PRODUCT_NAMES, 
     DATASET_DIR
-    )
+)
 
 class GFCDatasetBuilder:
     """
@@ -57,8 +57,6 @@ class GFCDatasetBuilder:
         self._build_recent_loss()
 
         self._build_valid_pixels()
-
-        #self._debug()
 
         self._build_dataset()
 
@@ -597,187 +595,9 @@ class GFCDatasetBuilder:
 
         print("\nDatasets almacenados en el archivo HDF5 en " + str(self.output_file))
 
-    def _debug(self):
+if __name__ == "__main__":
+    builder = GFCDatasetBuilder(
+        data_dir=CROPPED_DIR
+    )
 
-        print("\n" + "=" * 80)
-        print("DEBUG GFCDatasetBuilder")
-        print("=" * 80)
-
-        ####################################################################
-        # Información general
-        ####################################################################
-
-        print("\n[1] INFORMACIÓN GENERAL\n")
-
-        print(f"Target year : {self.target_year}")
-        print(f"Patch size  : {self.patch_size}")
-        print(f"Radius      : {self.radius}")
-
-        print(f"\nImagen")
-
-        print(f"Height : {self.height}")
-        print(f"Width  : {self.width}")
-
-        print(f"\nTemporal years : {self.temporal_years}")
-
-        print(f"\nPixeles válidos : {len(self.valid_pixels):,}")
-
-        ####################################################################
-        # Variables estáticas
-        ####################################################################
-
-        print("\n" + "=" * 80)
-        print("[2] VARIABLES ESTÁTICAS")
-        print("=" * 80)
-
-        print(
-            f"Treecover  min={self.treecover.min()} "
-            f"max={self.treecover.max()} "
-            f"mean={self.treecover.mean():.2f}"
-        )
-
-        print(
-            f"Gain unique : {np.unique(self.gain)}"
-        )
-
-        print(
-            f"Datamask unique : "
-            f"{np.unique(self.datamask, return_counts=True)}"
-        )
-
-        ####################################################################
-        # Distribución de lossyear
-        ####################################################################
-
-        print("\n" + "=" * 80)
-        print("[3] LOSSYEAR")
-        print("=" * 80)
-
-        values, counts = np.unique(
-            self.lossyear,
-            return_counts=True
-        )
-
-
-        for value, count in zip(values, counts):
-            value = int(value)
-            if value == 0:
-                year = "No Loss"
-            else:
-                year = 2000 + value
-
-            print(
-                f"{year:>8} : {count:>8,}"
-            )
-
-        ####################################################################
-        # Balance de clases
-        ####################################################################
-
-        print("\n" + "=" * 80)
-        print("[4] BALANCE DEL DATASET")
-        print("=" * 80)
-
-        target_code = self.target_year - 2000
-
-        positives = np.count_nonzero( self.lossyear == target_code )
-
-        negatives = len(self.valid_pixels) - positives
-
-        total = positives + negatives
-
-        print(f"Target year : {self.target_year}")
-
-        print(f"\nPositivos : {positives:,}")
-
-        print(f"Negativos : {negatives:,}")
-
-        print(f"Total     : {total:,}")
-
-        print(
-            f"\nPositive ratio : "
-            f"{100*positives/total:.4f}%"
-        )
-
-        print(
-            f"Negative ratio : "
-            f"{100*negatives/total:.4f}%"
-        )
-
-        print(
-            f"\nDesbalance : 1 positivo cada "
-            f"{negatives / positives:.1f} negativos"
-        )
-
-        ####################################################################
-        # Primera muestra positiva
-        ####################################################################
-
-        print("\n" + "=" * 80)
-        print("[5] EJEMPLO POSITIVO")
-        print("=" * 80)
-
-        positive_found = False
-
-        for row, col in self.valid_pixels:
-
-            if int(self.lossyear[row, col]) == target_code:
-
-                positive_found = True
-
-                static, temporal, label = self._create_sample(
-                    row,
-                    col
-                )
-
-                print(f"Pixel ({row},{col})")
-
-                print(f"Label : {label}")
-
-                print(f"Static : {static.shape}")
-
-                print(f"Temporal : {temporal.shape}")
-
-                break
-
-        if not positive_found:
-
-            print("No existen muestras positivas.")
-
-        ####################################################################
-        # Primera muestra negativa
-        ####################################################################
-
-        print("\n" + "=" * 80)
-        print("[6] EJEMPLO NEGATIVO")
-        print("=" * 80)
-
-        for row, col in self.valid_pixels:
-
-            if int(self.lossyear[row, col]) != target_code:
-
-                static, temporal, label = self._create_sample(
-                    row,
-                    col
-                )
-
-                print(f"Pixel ({row},{col})")
-
-                print(f"Label : {label}")
-
-                print(f"Static : {static.shape}")
-
-                print(f"Temporal : {temporal.shape}")
-
-                break
-
-        print("\n" + "=" * 80)
-        print("DEBUG FINALIZADO")
-        print("=" * 80)
-
-
-builder = GFCDatasetBuilder(
-    data_dir=CROPPED_DIR
-)
-
-builder.build()
+    builder.build()

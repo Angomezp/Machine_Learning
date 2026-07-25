@@ -7,7 +7,14 @@ BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
 RAW_DIR = DATA_DIR / "raw"
 CROPPED_DIR = DATA_DIR / "cropped"
+
 DATASET_DIR = DATA_DIR / "dataset"
+DATASET_PATH = DATASET_DIR / "gfc_dataset_2025.h5"
+
+SPLIT_DIR = DATASET_DIR
+SPLIT_PATH = DATASET_DIR / "split_target2025_undersample10_seed42.npz"  # cambiar nombre respectivo
+
+MODELS_OUTPUT_DIR = BASE_DIR.parent / "models" / "MDFNet" / "checkpoints"
 
 for directory in (DATA_DIR, RAW_DIR, CROPPED_DIR, DATASET_DIR):
     directory.mkdir(parents=True, exist_ok=True)
@@ -63,3 +70,8 @@ PRODUCT_NAMES = {
     "lossyear": "loss",
     "last": "last",
 }
+
+# Hyperparámetros de entrenamiento
+BATCH_SIZE = 32
+EPOCHS = 1000
+LEARNING_RATE = 1e-3
