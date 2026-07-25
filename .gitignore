@@ -1,5 +1,6 @@
 *.tif
 *.tiff
+*.h5
 **_pycache__/
 # Compiled class file
 *.class

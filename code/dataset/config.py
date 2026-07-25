@@ -7,9 +7,9 @@ BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
 RAW_DIR = DATA_DIR / "raw"
 CROPPED_DIR = DATA_DIR / "cropped"
-PREPROCESSED_DIR = DATA_DIR / "preprocessed"
+DATASET_DIR = DATA_DIR / "dataset"
 
-for directory in (DATA_DIR, RAW_DIR, CROPPED_DIR, PREPROCESSED_DIR):
+for directory in (DATA_DIR, RAW_DIR, CROPPED_DIR, DATASET_DIR):
     directory.mkdir(parents=True, exist_ok=True)
 
 OUTPUT_DIR = DATA_DIR
@@ -54,7 +54,6 @@ STATIC_PRODUCTS = [
 
 TEMPORAL_PRODUCTS = [
     "last",
-    
 ]
 
 PRODUCT_NAMES = {
