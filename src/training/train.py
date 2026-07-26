@@ -5,15 +5,15 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 import numpy as np
 
-from dataset.pytorch_dataset import PyTorchDataset
+from dataset.utils.pytorch_dataset import PyTorchDataset
 
 from models.MDFNet.MDFNet import MDFNet
 
-from training.trainer import Trainer
+from training.utils.trainer import Trainer
 
 from dataset.dataset_splitter import DatasetSplitter
 
-from dataset.config import DATASET_PATH, SPLIT_PATH, BATCH_SIZE, EPOCHS, LEARNING_RATE, MODELS_OUTPUT_DIR
+from config import DATASET_PATH, SPLIT_PATH, BATCH_SIZE, EPOCHS, LEARNING_RATE, MODELS_OUTPUT_DIR
 
 
 def load_split( split_path: str | Path, ) -> DatasetSplitter:

@@ -2,7 +2,7 @@ from pathlib import Path
 
 from torch.utils.data import DataLoader
 
-from pytorch_dataset import PyTorchDataset
+from dataset.utils.pytorch_dataset import PyTorchDataset
 
 from config import DATASET_PATH, SPLIT_PATH
 

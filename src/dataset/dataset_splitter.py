@@ -4,7 +4,7 @@ from enum import Enum
 import numpy as np
 from pathlib import Path
 
-from .config import DATASET_PATH, SPLIT_DIR
+from ..config import DATASET_PATH, SPLIT_DIR
 
 class SamplingStrategy(Enum):
 
