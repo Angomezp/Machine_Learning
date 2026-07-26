@@ -53,7 +53,10 @@ class DatasetSplitter:
         self.test_indices = None
 
 
-    def build(self) -> None:
+    def build(
+        self,
+        filename: str | None = None
+    ) -> None:
 
         self._load_labels()
 
@@ -61,7 +64,7 @@ class DatasetSplitter:
 
         self._undersample_train()
 
-        self._save_split()
+        self._save_split(filename=filename)
 
 
     def _load_labels(self) -> None:
@@ -122,10 +125,7 @@ class DatasetSplitter:
 
         indices = np.arange(self.num_samples)
 
-        ####################################################################
         # TRAIN (60%) - RESTANTE (40%)
-        ####################################################################
-
         train_idx, remaining_idx, train_labels, remaining_labels = train_test_split(
             indices,
             self.labels,
@@ -135,9 +135,7 @@ class DatasetSplitter:
             shuffle=True,
         )
 
-        ####################################################################
         # VALIDATION (20%) - TEST (20%)
-        ####################################################################
 
         validation_fraction = ( self.validation_ratio / (self.validation_ratio + self.test_ratio) )
 
@@ -149,20 +147,14 @@ class DatasetSplitter:
             shuffle=True,
         )
 
-        ####################################################################
         # Guardar índices
-        ####################################################################
-
         self.train_indices = np.sort(train_idx)
 
         self.validation_indices = np.sort(validation_idx)
 
         self.test_indices = np.sort(test_idx)
 
-        ####################################################################
         # Debug
-        ####################################################################
-
         print(f"Train      : {len(self.train_indices):,}")
         print(f"Validation : {len(self.validation_indices):,}")
         print(f"Test       : {len(self.test_indices):,}")
@@ -185,10 +177,8 @@ class DatasetSplitter:
 
         Validation y Test permanecen sin modificaciones.
         """
-        ####################################################################
-        # Guardar train original
-        ####################################################################
 
+        # Guardar train original
         self.original_train_indices = self.train_indices.copy()
 
         if self.sampling != SamplingStrategy.UNDERSAMPLE:
@@ -201,9 +191,7 @@ class DatasetSplitter:
         print("Aplicando undersampling...")
         print("=" * 60)
 
-        ####################################################################
         # Separar positivos y negativos
-        ####################################################################
 
         train_labels = self.labels[self.train_indices]
 
@@ -217,10 +205,7 @@ class DatasetSplitter:
         print(f"Positivos originales : {num_positive:,}")
         print(f"Negativos originales : {num_negative:,}")
 
-        ####################################################################
         # Número de negativos a conservar
-        ####################################################################
-
         desired_negatives = num_positive * self.negative_ratio
 
         desired_negatives = min(
@@ -228,10 +213,7 @@ class DatasetSplitter:
             num_negative
         )
 
-        ####################################################################
         # Muestreo aleatorio
-        ####################################################################
-
         rng = np.random.default_rng(self.random_state)
 
         selected_negatives = rng.choice(
@@ -240,10 +222,7 @@ class DatasetSplitter:
             replace=False
         )
 
-        ####################################################################
         # Construir nuevo conjunto de entrenamiento
-        ####################################################################
-
         train_indices = np.concatenate(
 
             [
@@ -257,10 +236,7 @@ class DatasetSplitter:
 
         self.train_indices = train_indices
 
-        ####################################################################
         # Estadísticas
-        ####################################################################
-
         train_labels = self.labels[self.train_indices]
 
         positives = int(train_labels.sum())
@@ -297,7 +273,10 @@ class DatasetSplitter:
             f"seed{self.random_state}.npz"
         )
     
-    def _save_split(self) -> None:
+    def _save_split(
+        self,
+        filename: str |None = None
+    ) -> None:
         """
         Guarda los índices de entrenamiento, validación y prueba.
 
@@ -315,7 +294,10 @@ class DatasetSplitter:
             exist_ok=True
         )
 
-        output_file = output_dir / self._split_name()
+        if filename is None:
+            output_file = output_dir / self._split_name()
+        else:
+            output_file = output_dir / filename
 
         np.savez_compressed(
 

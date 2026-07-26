@@ -5,6 +5,8 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 import numpy as np
 
+from .visualization.plot_training_history import plot_training_history
+
 from ..models.MDFNet.MDFNet import MDFNet
 
 from ..config import DATASET_PATH, SPLIT_PATH, BATCH_SIZE, EPOCHS, LEARNING_RATE, MODELS_OUTPUT_DIR
@@ -23,14 +25,14 @@ def load_split( split_path: str | Path, ) -> DatasetSplitter:
 
 def create_datasets(
     dataset_path: Path,
-    split: dict,
+    split_path: str | Path,
 ):
     """
     Crea los datasets de entrenamiento y validación.
     """
 
     train_dataset = PyTorchDataset(
-        split_path=SPLIT_PATH,
+        split_path=split_path,
         dataset_path=dataset_path,
 
         split = "train",
@@ -38,7 +40,7 @@ def create_datasets(
     )
 
     validation_dataset = PyTorchDataset(
-        split_path=SPLIT_PATH,
+        split_path=split_path,
         dataset_path=dataset_path,
 
         split = "validation",
@@ -94,6 +96,7 @@ def create_trainer(
     model,
     train_loader,
     validation_loader,
+    output_dir: str | Path,
 ):
     """
     Construye el Trainer.
@@ -109,6 +112,20 @@ def create_trainer(
 
     )
 
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+
+        optimizer,
+
+        mode="min",
+
+        factor=0.5,
+
+        patience=3,
+
+        min_lr=1e-6,
+
+    )
+
     device = torch.device(
 
         "cuda"
@@ -118,6 +135,24 @@ def create_trainer(
         else "cpu"
 
     )
+
+    configuration = {
+
+        "architecture": "MDFNet",
+
+        "batch_size": BATCH_SIZE,
+
+        "epochs": EPOCHS,
+
+        "learning_rate": LEARNING_RATE,
+
+        "optimizer": "Adam",
+
+        "scheduler": "ReduceLROnPlateau",
+
+        "criterion": "BCEWithLogitsLoss",
+
+    }
 
     trainer = Trainer(
 
@@ -131,30 +166,37 @@ def create_trainer(
 
         optimizer=optimizer,
 
+        scheduler=scheduler,
+
         device=device,
 
         epochs=EPOCHS,
 
-        output_dir= MODELS_OUTPUT_DIR
+        output_dir= output_dir,
+
+        config = configuration,
 
     )
 
     return trainer
 
 
-def main() -> None:
+def main(
+    output_dir: str | Path,
+    split_path: str | Path
+ ) -> None:
 
     print("\n" + "=" * 70)
     print("FORESTNET TRAINING")
     print("=" * 70)
 
     # SPLIT
-    split = load_split( SPLIT_PATH )
+    split = load_split( split_path )
 
     # DATASETS
     train_dataset, validation_dataset = create_datasets(
         DATASET_PATH,
-        split,
+        split_path,
     )
     # DATALOADERS
     train_loader, validation_loader = create_dataloaders(
@@ -185,6 +227,7 @@ def main() -> None:
         model,
         train_loader,
         validation_loader,
+        output_dir,
     )
 
     # TRAIN
@@ -194,8 +237,15 @@ def main() -> None:
     print("TRAINING COMPLETED")
     print("=" * 70)
 
-    return history
+    return {
+
+        "history": history,
+
+        "output_dir": Path(output_dir),
+
+    }
 
 
 if __name__ == "__main__":
-    main()
+    main(output_dir=MODELS_OUTPUT_DIR,
+         split_path=SPLIT_PATH,)

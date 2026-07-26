@@ -1,11 +1,24 @@
 from pathlib import Path
 
+import json
 import torch
 import torch.nn as nn
 import numpy as np
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 
+from ..visualization.plot_training_history import plot_training_history
+
+from ...config import (
+    BEST_MODEL_METRIC,
+    BEST_MODEL_MODE, 
+    EARLY_STOPPING_DELTA, 
+    EARLY_STOPPING_MODE, 
+    EARLY_STOPPING_MONITOR, 
+    EARLY_STOPPING_PATIENCE
+)
+
+from .threshold_finder import ThresholdFinder
 from .metrics import compute_metrics
 from .early_stopping import EarlyStopping
 from .checkpoint import Checkpoint
@@ -17,15 +30,17 @@ class Trainer:
 
     def __init__(
         self,
-        model: nn.Module,
-        train_loader: DataLoader,
-        validation_loader: DataLoader,
-        criterion: nn.Module,
-        optimizer: torch.optim.Optimizer,
-        device: torch.device,
-        epochs: int,
-        output_dir: str | Path = "checkpoints",
-    ) -> None:
+        model,
+        train_loader,
+        validation_loader,
+        criterion,
+        optimizer,
+        scheduler,
+        device,
+        epochs,
+        output_dir,
+        config,
+    ):
 
         # MODEL
         self.model = model.to(device)
@@ -39,6 +54,7 @@ class Trainer:
         self.criterion = criterion
 
         self.optimizer = optimizer
+        self.scheduler = scheduler
 
         self.device = device
 
@@ -55,9 +71,16 @@ class Trainer:
         self.checkpoint = Checkpoint(
             self.output_dir
         )
+        self.threshold_finder = ThresholdFinder(
+            output_dir=self.output_dir,
+        )
+
+        self.config = config
 
         # HISTORY
         self.history = {
+
+            "epoch": [],
 
             "train_loss": [],
 
@@ -70,19 +93,24 @@ class Trainer:
             "f1": [],
 
             "roc_auc": [],
+
+            "learning_rate": [],
+
+            "best_metric": BEST_MODEL_METRIC,
+
+            "best_mode": BEST_MODEL_MODE,
+
         }
 
-        ####################################################################
         # EARLY STOPPING
-        ####################################################################
-
         self.early_stopping = EarlyStopping(
-            patience=10,
-            min_delta=0.0,
+            patience=EARLY_STOPPING_PATIENCE,
+            min_delta=EARLY_STOPPING_DELTA,
+            mode=EARLY_STOPPING_MODE,
         )
         # BEST MODEL
 
-        self.best_validation_loss = float("inf")
+        self.best_metric = float("inf") if BEST_MODEL_MODE == "min" else float("-inf")
 
         self.best_epoch = -1
 
@@ -256,6 +284,97 @@ class Trainer:
 
         return metrics
 
+    def _save_validation_predictions(
+        self,
+        labels: np.ndarray,
+        probabilities: np.ndarray,
+    ) -> Path:
+        """
+        Guarda las etiquetas reales y probabilidades obtenidas
+        sobre el conjunto de validación.
+        """
+
+        output_path = self.output_dir / "validation_predictions.npz"
+
+        np.savez_compressed(
+            output_path,
+            labels=labels,
+            probabilities=probabilities,
+        )
+
+        return output_path
+
+    def _save_best_model(
+        self,
+        epoch: int,
+        metrics: dict,
+        mode: str,
+        metric_name: str,
+    ) -> None:
+        """
+        Guarda el mejor modelo basado en la métrica especificada.
+
+        Parameters
+        ----------
+        epoch
+            Número de época.
+        metrics
+            Diccionario con métricas de validación.
+        mode
+            "min" si se busca minimizar la métrica, "max" si se busca maximizarla.
+        metric_name
+            Nombre de la métrica a monitorear.
+        """
+
+        if mode == "min":
+            is_best = metrics[metric_name] < self.best_metric
+        else:
+            is_best = metrics[metric_name] > self.best_metric
+
+        if is_best:
+            self.best_metric = metrics[metric_name]
+            self.best_epoch = epoch
+
+            self.checkpoint.save(
+
+                model=self.model,
+
+                optimizer=self.optimizer,
+
+                scheduler=self.scheduler,
+
+                epoch=epoch,
+
+                metrics=metrics,
+
+                monitor_metric=metric_name,
+
+                config=self.config,
+
+            )
+
+            print(f"✓ Best model saved at epoch {epoch} with {metric_name}: {metrics[metric_name]:.4f}")
+
+
+    def _save_training_history(self) -> None:
+        """
+        Guarda el historial completo del entrenamiento.
+        """
+
+        history_path = self.output_dir / "training_history.json"
+
+        with open(
+            history_path,
+            "w",
+            encoding="utf-8",
+        ) as file:
+
+            json.dump(
+                self.history,
+                file,
+                indent=4,
+            )
+    
     def fit(
         self,
     ) -> dict:
@@ -283,33 +402,17 @@ class Trainer:
             # VALIDATION
             validation_metrics = self._validate()
 
-            # SAVE BEST MODEL
-            if validation_metrics["loss"] < self.best_validation_loss:
+            # UPDATE SCHEDULER
+            self.scheduler.step(
+                validation_metrics["loss"]
+            )
+            # UPDATE HISTORY
+            self.history["epoch"].append(epoch)
+            
+            self.history["learning_rate"].append(
+                self.optimizer.param_groups[0]["lr"]
+            )
 
-                self.best_validation_loss = validation_metrics["loss"]
-
-                self.best_epoch = epoch
-
-                self.checkpoint.save(
-
-                    model=self.model,
-                    optimizer=self.optimizer,
-                    epoch=epoch,
-                    metrics=validation_metrics,
-
-                )
-
-                print("✓ Best model saved")
-
-            # EARLY STOPPING
-            if self.early_stopping( validation_metrics["loss"] ):
-
-                print()
-                print( f"Early stopping at epoch {epoch}" )
-
-                break
-
-            # HISTORY
             self.history["train_loss"].append( train_loss )
 
             self.history["validation_loss"].append( validation_metrics["loss"] )
@@ -339,4 +442,60 @@ class Trainer:
                 f"ROC-AUC: {validation_metrics['roc_auc']:.4f}"
             )
 
+
+            checkpoint_metrics = validation_metrics.copy()
+
+            checkpoint_metrics.pop("labels")
+
+            checkpoint_metrics.pop("probabilities")
+            # SAVE BEST MODEL
+            self._save_best_model(
+                epoch=epoch,
+                metrics=checkpoint_metrics,
+                mode=BEST_MODEL_MODE,
+                metric_name=BEST_MODEL_METRIC,
+            )
+            
+            # EARLY STOPPING
+            if self.early_stopping( validation_metrics[EARLY_STOPPING_MONITOR] ):
+
+                print()
+                print( f"Early stopping at epoch {epoch}" )
+
+                break
+
+
+        threshold_results = self.threshold_finder.search(
+            labels=validation_metrics["labels"],
+            probabilities=validation_metrics["probabilities"],
+        )
+
+        print( f"Best Threshold : {threshold_results['best_threshold']:.2f}"  )
+
+        print( f"Best F1        : {threshold_results['best_f1']:.4f}" 
+        )
+
+        # SAVE IN HISTORY
+
+        self.history["best_threshold"] = threshold_results["best_threshold"]
+        self.history["best_threshold_f1"] = threshold_results["best_f1"]
+        self.history["best_threshold_precision"] = threshold_results["precision"]
+        self.history["best_threshold_recall"] = threshold_results["recall"]
+
+        self.history["requested_epochs"] = self.epochs
+
+        self.history["epochs_completed"] = len(self.history["epoch"])
+        self._save_training_history()
+
+        validation_predictions_path = self._save_validation_predictions(
+            labels=validation_metrics["labels"],
+            probabilities=validation_metrics["probabilities"],
+        )
+
+        plot_training_history(
+                history_path=self.output_dir / "training_history.json",
+                threshold_results_path=self.output_dir / "threshold_results.json",
+                validation_predictions_path=validation_predictions_path,
+                output_dir=self.output_dir / "figures",
+            )
         return self.history

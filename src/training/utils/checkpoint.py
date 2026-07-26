@@ -6,7 +6,7 @@ import torch.nn as nn
 
 class Checkpoint:
     """
-    Guarda y carga checkpoints del entrenamiento.
+    Guarda y carga checkpoints completos del entrenamiento.
     """
 
     def __init__(
@@ -22,25 +22,40 @@ class Checkpoint:
             exist_ok=True,
         )
 
-        self.path = self.output_dir / filename 
+        self.path = self.output_dir / filename
 
     def save(
         self,
         model: nn.Module,
         optimizer: torch.optim.Optimizer,
+        scheduler,
         epoch: int,
         metrics: dict,
+        monitor_metric: str,
+        config: dict,
     ) -> None:
         """
-        Guarda un checkpoint.
+        Guarda un checkpoint completo.
         """
 
         torch.save(
             {
                 "epoch": epoch,
+
                 "model_state_dict": model.state_dict(),
+
                 "optimizer_state_dict": optimizer.state_dict(),
+
+                "scheduler_state_dict":
+                    scheduler.state_dict()
+                    if scheduler is not None
+                    else None,
+
                 "metrics": metrics,
+
+                "monitor_metric": monitor_metric,
+
+                "config": config,
             },
             self.path,
         )
@@ -49,6 +64,7 @@ class Checkpoint:
         self,
         model: nn.Module,
         optimizer: torch.optim.Optimizer | None = None,
+        scheduler=None,
         device: str | torch.device = "cpu",
     ) -> dict:
         """
@@ -57,7 +73,7 @@ class Checkpoint:
         Returns
         -------
         dict
-            Información almacenada.
+            Diccionario con toda la información almacenada.
         """
 
         checkpoint = torch.load(
@@ -75,7 +91,20 @@ class Checkpoint:
                 checkpoint["optimizer_state_dict"]
             )
 
+        if (
+            scheduler is not None
+            and checkpoint["scheduler_state_dict"] is not None
+        ):
+
+            scheduler.load_state_dict(
+                checkpoint["scheduler_state_dict"]
+            )
+
         return checkpoint
 
-    def exists( self, ) -> bool:
+    def exists(self) -> bool:
+        """
+        Indica si existe un checkpoint.
+        """
+
         return self.path.exists()

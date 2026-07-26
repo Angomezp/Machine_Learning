@@ -18,7 +18,7 @@ DATASET_PATH = DATASET_DIR / DATASET_NAME
 SPLIT_DIR = DATASET_DIR
 SPLIT_PATH = DATASET_DIR / "split_target2025_undersample10_seed42.npz"  # cambiar nombre respectivo
 
-MODELS_OUTPUT_DIR = BASE_DIR / "models" / "MDFNet" / "checkpoints"
+MODELS_OUTPUT_DIR = BASE_DIR / "models" / "MDFNet" 
 
 OUTPUT_DIR = DATA_DIR
 
@@ -84,5 +84,33 @@ REFERENCE_FILE = RAW_DIR / "last_2025.tif"  # cambiar nombre respectivo
 
 # Hyperparámetros de entrenamiento
 BATCH_SIZE = 64
-EPOCHS = 50
+EPOCHS = 2
 LEARNING_RATE = 1e-3
+
+EARLY_STOPPING_PATIENCE = 10
+EARLY_STOPPING_DELTA = 1e-4
+EARLY_STOPPING_MONITOR = "roc_auc"   # (loss, f1, roc_auc, precision, recall en validacion )
+EARLY_STOPPING_MODE = "max"  # (min, max) dependiendo de la métrica a monitorear
+
+BEST_MODEL_METRIC = "roc_auc"  # (loss, f1, roc_auc, precision, recall  en validacion )
+BEST_MODEL_MODE = "max"  # (min, max) dependiendo de la métrica a monitorear
+
+
+EXPERIMENTS = [
+
+    {
+        "name": "baseline",
+        "undersampling": None,
+    },
+
+    {
+        "name": "undersampling_1_15",
+        "undersampling": 15,
+    },
+
+    {
+        "name": "undersampling_1_10",
+        "undersampling": 10,
+    },
+
+]

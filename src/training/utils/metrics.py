@@ -15,17 +15,13 @@ def compute_metrics(
     threshold: float = 0.5,
 ) -> dict:
 
-    ###############################################################
     # BINARIZAR PREDICCIONES
-    ###############################################################
 
     predictions = (
         probabilities >= threshold
     ).astype(np.uint8)
 
-    ###############################################################
-    # DEBUG (AÑADIR ESTE BLOQUE)
-    ###############################################################
+    # MONITOREAR
 
     print("\n" + "=" * 60)
     print("Prediction statistics")
@@ -50,9 +46,7 @@ def compute_metrics(
     print(f"FN = {fn}")
     print(f"TP = {tp}")
 
-    ###############################################################
     # MÉTRICAS
-    ###############################################################
 
     precision = precision_score(
         labels,
@@ -77,9 +71,7 @@ def compute_metrics(
         probabilities,
     )
 
-    ###############################################################
     # RETORNO
-    ###############################################################
 
     return {
         "precision": precision,

@@ -1,3 +1,5 @@
+from ...config import EARLY_STOPPING_PATIENCE, EARLY_STOPPING_DELTA
+
 class EarlyStopping:
     """
     Implementa Early Stopping basado en una métrica.
@@ -13,8 +15,8 @@ class EarlyStopping:
 
     def __init__(
         self,
-        patience: int = 10,
-        min_delta: float = 0.0,
+        patience: int = EARLY_STOPPING_PATIENCE,
+        min_delta: float = EARLY_STOPPING_DELTA,
         mode: str = "min",
     ) -> None:
 
