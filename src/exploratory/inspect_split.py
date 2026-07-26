@@ -3,7 +3,7 @@ from pathlib import Path
 import h5py
 import numpy as np
 
-from config import DATASET_PATH,SPLIT_PATH
+from ..config import DATASET_PATH,SPLIT_PATH
 
 
 

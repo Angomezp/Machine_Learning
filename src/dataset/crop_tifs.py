@@ -14,7 +14,7 @@ import rasterio
 from rasterio.windows import Window
 from rasterio.windows import transform as window_transform
 
-from config import (
+from ..config import (
     CENTER_LAT,
     CENTER_LON,
     WIDTH_KM,
@@ -22,9 +22,9 @@ from config import (
     RAW_DIR,
     CROPPED_DIR,
     PADDING_METERS,
+    REFERENCE_FILE,
 )
 
-REFERENCE_FILE = RAW_DIR / "last_2025.tif"
 
 
 # ==========================================================

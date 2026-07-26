@@ -5,10 +5,11 @@ import h5py
 import rasterio
 from time import perf_counter
 
-from config import (
+from ..config import (
     CROPPED_DIR,
     PRODUCT_NAMES, 
-    DATASET_DIR
+    DATASET_DIR,
+    DATASET_NAME,
 )
 
 class GFCDatasetBuilder:
@@ -22,10 +23,9 @@ class GFCDatasetBuilder:
         data_dir: Path,
         patch_size: int = 17,
         target_year: int = 2025,
-        filename: str = "gfc_dataset_{target_year}.h5"
     ):
         self.data_dir = Path(data_dir)
-        self.output_file = DATASET_DIR / filename.format(target_year=target_year)
+        self.output_file = DATASET_DIR / DATASET_NAME
 
         self.patch_size = patch_size
         self.radius = patch_size // 2

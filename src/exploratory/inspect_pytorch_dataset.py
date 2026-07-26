@@ -2,9 +2,9 @@ from pathlib import Path
 
 from torch.utils.data import DataLoader
 
-from dataset.utils.pytorch_dataset import PyTorchDataset
+from ..dataset.utils.pytorch_dataset import PyTorchDataset
 
-from config import DATASET_PATH, SPLIT_PATH
+from ..config import BATCH_SIZE, DATASET_PATH, SPLIT_PATH
 
 
 def inspect_dataset(name: str):
@@ -63,7 +63,7 @@ def inspect_dataset(name: str):
 
     loader = DataLoader(
         dataset,
-        batch_size=32,
+        batch_size=BATCH_SIZE,
         shuffle=False,
         num_workers=0,
     )
@@ -104,9 +104,9 @@ def inspect_dataset(name: str):
 
     assert sample["temporal"].shape == (8, 3, 17, 17)
 
-    assert batch["static"].shape == (32, 2, 17, 17)
+    assert batch["static"].shape == (BATCH_SIZE, 2, 17, 17)
 
-    assert batch["temporal"].shape == (32, 8, 3, 17, 17)
+    assert batch["temporal"].shape == (BATCH_SIZE, 8, 3, 17, 17)
 
     print("\n✓ Dataset correcto")
 

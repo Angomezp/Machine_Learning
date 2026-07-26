@@ -1,7 +1,7 @@
 import rasterio
 
-from config import *
-from dataset.utils.utils import *
+from ..config import *
+from .utils.utils import build_url, download_file, get_tile
 
 tile = get_tile(CENTER_LAT, CENTER_LON)
 

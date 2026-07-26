@@ -14,22 +14,15 @@ import rasterio
 from rasterio.windows import from_bounds
 from rasterio.windows import transform as window_transform
 
-from config import (
+from ..config import (
     CENTER_LAT,
     CENTER_LON,
     WIDTH_KM,
     HEIGHT_KM,
     RAW_DIR,
+    PREVIEW_INPUT_FILE,
+    PREVIEW_OUTPUT_FILE,
 )
-
-
-# ============================================================
-# Configuración
-# ============================================================
-
-INPUT_FILE = RAW_DIR / "last_2025.tif"
-OUTPUT_FILE = RAW_DIR / "preview_last_2025.tif"
-
 
 # ============================================================
 # Utilidades
@@ -103,7 +96,7 @@ print(f"Top    : {top}")
 # Recorte
 # ============================================================
 
-with rasterio.open(INPUT_FILE) as src:
+with rasterio.open(PREVIEW_INPUT_FILE) as src:
 
     window = from_bounds(
         left,
@@ -127,7 +120,7 @@ with rasterio.open(INPUT_FILE) as src:
     )
 
     with rasterio.open(
-        OUTPUT_FILE,
+        PREVIEW_OUTPUT_FILE,
         "w",
         **profile,
     ) as dst:
@@ -135,7 +128,7 @@ with rasterio.open(INPUT_FILE) as src:
         dst.write(crop)
 
 print()
-print(f"Recorte guardado en:\n{OUTPUT_FILE}")
+print(f"Recorte guardado en:\n{PREVIEW_OUTPUT_FILE}")
 
 # ============================================================
 # Visualización

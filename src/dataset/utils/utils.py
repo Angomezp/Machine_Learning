@@ -3,7 +3,7 @@ from pathlib import Path
 
 import requests
 
-from config import GFC_VERSIONS
+from ...config import GFC_VERSIONS
 
 BASE_URL = (
     "https://storage.googleapis.com/"
