@@ -45,18 +45,12 @@ class PyTorchDataset(Dataset):
 
         self.transform = transform
 
-        ####################################################################
         # Objetos cargados posteriormente
-        ####################################################################
-
         self.h5 = None
 
         self.indices = None
 
-        ####################################################################
         # Cargar información
-        ####################################################################
-
         self._load_split()
 
     
@@ -71,10 +65,7 @@ class PyTorchDataset(Dataset):
     
         print(f"[Worker {os.getpid()}] cargando split...")
 
-        ####################################################################
         # Verificar split solicitado
-        ####################################################################
-
         valid_splits = {
             "train": "train_indices",
             "validation": "validation_indices",
@@ -88,10 +79,7 @@ class PyTorchDataset(Dataset):
                 f"Debe ser uno de: {list(valid_splits.keys())}"
             )
 
-        ####################################################################
         # Cargar información del NPZ
-        ####################################################################
-
         with np.load(self.split_path) as split_data:
 
             self.indices = split_data[valid_splits[self.split]]
@@ -116,27 +104,20 @@ class PyTorchDataset(Dataset):
         para permitir acceso aleatorio eficiente a las muestras.
         """
 
-        ####################################################################
         # Ya está abierto
-        ####################################################################
 
         if self.h5 is not None:
             return
 
         print(f"[Worker {os.getpid()}] Opening dataset...")
 
-        ####################################################################
         # Abrir HDF5
-        ####################################################################
-
         self.h5 = h5py.File(
             self.dataset_path,
             "r"
         )
 
-        ####################################################################
         # Verificar datasets obligatorios
-        ####################################################################
 
         required_datasets = [
             "static",
@@ -155,10 +136,7 @@ class PyTorchDataset(Dataset):
                     f"No se encontró el dataset '{dataset}'."
                 )
 
-        ####################################################################
         # Referencias a datasets
-        ####################################################################
-
         self.static = self.h5["static"]
 
         self.temporal = self.h5["temporal"]
@@ -171,10 +149,7 @@ class PyTorchDataset(Dataset):
 
         self.sample_id = self.h5["sample_id"]
 
-        ####################################################################
         # Metadata
-        ####################################################################
-
         self.patch_size = int(
             self.h5.attrs["patch_size"]
         )
@@ -214,16 +189,11 @@ class PyTorchDataset(Dataset):
         """
         if self.h5 is None:
             self._open_dataset()
-        ####################################################################
+        
         # Índice real dentro del HDF5
-        ####################################################################
-
         sample_idx = int(self.indices[idx])
 
-        ####################################################################
         # Leer datos
-        ####################################################################
-
         static = self.static[sample_idx]
 
         temporal = self.temporal[sample_idx]
@@ -236,10 +206,8 @@ class PyTorchDataset(Dataset):
 
         sample_id = self.sample_id[sample_idx]
 
-        ####################################################################
+        
         # Tensorización
-        ####################################################################
-
         static = torch.from_numpy(
             static
         ).float()
@@ -266,9 +234,7 @@ class PyTorchDataset(Dataset):
             dtype=torch.int32,
         )
 
-        ####################################################################
         # Transformaciones opcionales
-        ####################################################################
 
         if self.transform is not None:
 
@@ -277,10 +243,7 @@ class PyTorchDataset(Dataset):
                 temporal,
             )
 
-        ####################################################################
         # Retorno
-        ####################################################################
-
         return {
             "static": static,
             "temporal": temporal,

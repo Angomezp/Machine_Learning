@@ -9,29 +9,30 @@ from ..config import (
     CROPPED_DIR,
     PRODUCT_NAMES, 
     DATASET_DIR,
-    DATASET_NAME,
+    FORECAST_DATASET_NAME,
 )
 
-class GFCDatasetBuilder:
+class GFCForecastDatasetBuilder:
     """
-    Construye el dataset de entrenamiento a partir de los TIFF
+    Construye el dataset de predicción a partir de los TIFF
     recortados del Global Forest Change.
+    No posee labels.
     """
 
     def __init__(
         self,
         data_dir: Path,
         patch_size: int = 17,
-        target_year: int = 2025,
+        target_year: int = 2026,
     ):
         self.data_dir = Path(data_dir)
-        self.output_file = DATASET_DIR / DATASET_NAME
+        self.output_file = DATASET_DIR / FORECAST_DATASET_NAME
 
         self.patch_size = patch_size
         self.radius = patch_size // 2
 
-        self.target_year = target_year
-        self.temporal_years = [target_year - 2, target_year - 1, target_year]
+        self.forecast_year = target_year
+        self.temporal_years = [target_year - 3, target_year - 2, target_year-1]
         self.recent_loss = {}
         self.valid_pixels = []
 
@@ -129,7 +130,7 @@ class GFCDatasetBuilder:
 
         """
         Construye las cuatro variables recent_loss para cada año
-        temporal (2022, 2023 y 2024).
+        temporal (target year - 1, target year - 2, target year - 3).
         """
 
         print("\n" + "=" * 60)
@@ -343,39 +344,13 @@ class GFCDatasetBuilder:
 
         return temporal.astype(np.float32)
 
-    def _create_label(
-        self,
-        row: int,
-        col: int
-    ) -> np.uint8:
-        """
-        Construye la etiqueta para un píxel.
-
-        Parameters
-        ----------
-        row : int
-            Fila del píxel.
-
-        col : int
-            Columna del píxel.
-
-        Returns
-        -------
-        np.uint8
-            1 si el píxel fue deforestado exactamente en el año objetivo,
-            0 en caso contrario.
-        """
-
-        target_code = self.target_year - 2000
-
-        return np.uint8( int(self.lossyear[row, col]) == target_code )
     
 
     def _create_sample(
         self,
         row: int,
         col: int
-    ) -> tuple[np.ndarray, np.ndarray, np.uint8]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Construye una muestra del dataset.
 
@@ -390,21 +365,19 @@ class GFCDatasetBuilder:
         Returns
         -------
         tuple
-            ( static_tensor, temporal_tensor, label )
+            ( static_tensor, temporal_tensor)
         """
 
         static = self._extract_static_patch( row, col )
 
         temporal = self._extract_temporal_patch( row, col )
 
-        label = self._create_label( row, col )
-
-        return ( static, temporal, label )
+        return ( static, temporal, )
 
     def _build_dataset(self):
 
         print("\n" + "=" * 70)
-        print("Construyendo dataset...")
+        print("Construyendo dataset de forecast...")
         print("=" * 70)
 
         total_samples = len(self.valid_pixels)
@@ -417,11 +390,8 @@ class GFCDatasetBuilder:
         )
 
         with h5py.File(self.output_file, "w") as h5:
-
-            ####################################################################
-            # DATASETS
-            ####################################################################
-
+     
+            # DATASETS    
             static_ds = h5.create_dataset(
                 "static",
                 shape=(total_samples, 2, self.patch_size, self.patch_size),
@@ -438,12 +408,6 @@ class GFCDatasetBuilder:
                     self.patch_size
                 ),
                 dtype=np.float32
-            )
-
-            label_ds = h5.create_dataset(
-                "label",
-                shape=(total_samples,),
-                dtype=np.uint8
             )
 
             coordinate_ds = h5.create_dataset(
@@ -464,22 +428,19 @@ class GFCDatasetBuilder:
                 dtype=np.int32
             )
 
-            ####################################################################
+            
             # CONSTRUCCIÓN
-            ####################################################################
+            
 
-            positives = 0
             t0 = perf_counter()
 
             for i, (row, col) in enumerate(self.valid_pixels):
 
-                static, temporal, label = self._create_sample( row, col )
+                static, temporal = self._create_sample( row, col )
 
                 static_ds[i] = static
 
                 temporal_ds[i] = temporal
-
-                label_ds[i] = label
 
                 coordinate_ds[i] = (row, col)
 
@@ -497,13 +458,6 @@ class GFCDatasetBuilder:
 
                 sample_id_ds[i] = i
 
-                positives += int(label)
-
-                if (i + 1) % 5000 == 0 or (i + 1) == total_samples:
-
-                    print(
-                        f"{i + 1:>8,} / {total_samples:,}"
-                    )
                 if (i+1) % 1000 == 0:
 
                     elapsed = perf_counter() - t0
@@ -514,13 +468,12 @@ class GFCDatasetBuilder:
                         f"  {(i+1)/elapsed:.1f} muestras/s"
                     )
 
-            ####################################################################
+            
             # METADATA
-            ####################################################################
-
-            negatives = total_samples - positives
-
-            h5.attrs["target_year"] = self.target_year
+            h5.attrs["dataset_type"] = "forecast"
+            h5.attrs["forecast_year"] = self.forecast_year
+            h5.attrs["forecast"] = True
+            h5.attrs["has_labels"] = False
             h5.attrs["temporal_years"] = self.temporal_years
 
             h5.attrs["patch_size"] = self.patch_size
@@ -546,9 +499,6 @@ class GFCDatasetBuilder:
             h5.attrs["num_temporal_channels"] = 8
             h5.attrs["num_timesteps"] = 3
 
-            h5.attrs["num_positive"] = positives
-            h5.attrs["num_negative"] = negatives
-            h5.attrs["positive_ratio"] = positives / total_samples
 
             h5.attrs["static_features"] = [
                 "treecover",
@@ -566,38 +516,21 @@ class GFCDatasetBuilder:
                 "recent_loss4"
             ]
 
-        ########################################################################
         # RESUMEN
-        ########################################################################
-
         print("\n" + "=" * 70)
-        print("Dataset construido")
+        print("Forecast dataset construido")
         print("=" * 70)
 
         print(f"Archivo            : {self.output_file}")
-
         print(f"Muestras           : {total_samples:,}")
-
-        print(f"Positivos          : {positives:,}")
-
-        print(f"Negativos          : {negatives:,}")
-
-        print(f"Positive ratio     : {100 * positives / total_samples:.2f}%")
-
-        print(f"Negative ratio     : {100 * negatives / total_samples:.2f}%")
-
-        if positives > 0:
-
-            print(
-                f"Desbalance         : "
-                f"1:{negatives / positives:.2f}"
-            )
+        print(f"Año      : {self.forecast_year}")
 
         print("\nDatasets almacenados en el archivo HDF5 en " + str(self.output_file))
 
 if __name__ == "__main__":
-    builder = GFCDatasetBuilder(
-        data_dir=CROPPED_DIR
+    builder = GFCForecastDatasetBuilder(
+        data_dir=CROPPED_DIR,
+        target_year=2026,
     )
 
     builder.build()

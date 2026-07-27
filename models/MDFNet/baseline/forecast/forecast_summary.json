@@ -1,0 +1,9 @@
+{
+    "prediction_year": 2026,
+    "threshold": 0.6,
+    "pixels": 313599,
+    "predicted_deforestation": 1918,
+    "checkpoint_epoch": 47,
+    "architecture": "MDFNet",
+    "forecast_year": 2026
+}

@@ -12,6 +12,7 @@ CROPPED_DIR = DATA_DIR / "cropped"
 DATASET_DIR = DATA_DIR / "dataset"
 PREVIEW_DIR = DATA_DIR / "preview"
 
+FORECAST_DATASET_NAME = "gfc_forecast_dataset_2026.h5"  # cambiar nombre respectivo
 DATASET_NAME = "gfc_dataset_2025.h5"  # cambiar nombre respectivo
 DATASET_PATH = DATASET_DIR / DATASET_NAME 
 
@@ -84,10 +85,10 @@ REFERENCE_FILE = RAW_DIR / "last_2025.tif"  # cambiar nombre respectivo
 
 # Hyperparámetros de entrenamiento
 BATCH_SIZE = 64
-EPOCHS = 2
+EPOCHS = 200
 LEARNING_RATE = 1e-3
 
-EARLY_STOPPING_PATIENCE = 10
+EARLY_STOPPING_PATIENCE = 25
 EARLY_STOPPING_DELTA = 1e-4
 EARLY_STOPPING_MONITOR = "roc_auc"   # (loss, f1, roc_auc, precision, recall en validacion )
 EARLY_STOPPING_MODE = "max"  # (min, max) dependiendo de la métrica a monitorear
