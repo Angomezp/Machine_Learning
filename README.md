@@ -178,7 +178,7 @@ Machine_Learning/
 
 La siguiente figura corresponde al mapa/probabilidad de forecasting generado en el experimento baseline:
 
-![Forecasting](models/MDFNet/baseline/forecast/figures/forecast_probability_map.png)
+![Forecasting](models/MDFNet/baseline/forecast/figures/forecast_overlay.png)
 
 ## Notas utiles
 
