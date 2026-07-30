@@ -72,6 +72,8 @@ python -m src.experiments.run_experiments
 ```text
 Machine_Learning/
 ├── README.md
+├── MML_Articulo_Proyecto.pdf                # Articulo principal
+├── MML_Material_Suplementario.pdf           # Información extra sobre el proyecto
 ├── requirements.txt                         # Dependencias Python del proyecto.
 ├── data/                                    # Datos crudos, recortes, datasets y vistas previas.
 │   ├── raw/                                 # GeoTIFF originales descargados de Global Forest Change.
